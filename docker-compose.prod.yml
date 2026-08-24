@@ -1,0 +1,88 @@
+# Production stack, following the invoicy layout:
+#
+#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.traefik.yml up -d --build
+#
+# Postgres stays on the compose-internal network (never published), the API is
+# internal-only behind the Next.js /api proxy, and only the web container touches
+# the host — on loopback, for the reverse proxy. Secrets come from /opt/rentledger/.env.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:?required}
+    volumes:
+      - rentledger-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    expose:
+      - "5432"
+
+  # One-shot: applies migrations, then exits. The API waits for it to succeed.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+    command: npx prisma migrate deploy
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: always
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: ${DATABASE_URL:?required}
+      JWT_SECRET: ${JWT_SECRET:?required}
+      CORS_ORIGIN: ${PUBLIC_APP_URL:-https://rentledger.ossels.ai}
+    expose:
+      - "4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        API_ORIGIN: http://api:4000
+    restart: always
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
+    # Loopback only — the reverse proxy terminates TLS and fronts this.
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3003}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  rentledger-pgdata:

@@ -67,3 +67,23 @@ All under `/api` (auth-guarded except `auth/status`, `auth/setup`, `auth/login`)
 - `GET/PATCH /settings`, `GET /parties`, `PATCH /parties/:key`
 
 Amounts are whole rupees; splits must satisfy `splitA + splitB = total` (validated server-side).
+
+## Deployment (rentledger.ossels.ai)
+
+Deployed to the same VPS as invoicy, with the same layout: the stack lives in
+`/opt/rentledger`, runs its own internal Postgres (never published to the host), the
+API stays internal behind the Next.js `/api` proxy, and only the web container binds
+a host port — loopback `127.0.0.1:3003` (invoicy holds 3002). The host's existing
+Traefik (from the n8n stack, network `n8n_default`) routes `rentledger.ossels.ai`
+to it via container labels and issues the TLS certificate automatically once the
+subdomain's A record points at the server.
+
+```bash
+./deploy/deploy.sh
+```
+
+First run clones the repo to `/opt/rentledger` and generates `.env` with fresh
+secrets; later runs `git reset --hard origin/main` and rebuild. Override target with
+`DEPLOY_HOST=root@<ip> DEPLOY_KEY=~/.ssh/<key>`.
+
+DNS: add an A record `rentledger` → the VPS IP (same as `invoicy.ossels.ai`).

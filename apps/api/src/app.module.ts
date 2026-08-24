@@ -7,6 +7,7 @@ import { EntriesModule } from "./entries/entries.module";
 import { LedgerModule } from "./ledger/ledger.module";
 import { SettingsModule } from "./settings/settings.module";
 import { PartiesModule } from "./parties/parties.module";
+import { HealthController } from "./health.controller";
 
 @Module({
   imports: [
@@ -19,5 +20,6 @@ import { PartiesModule } from "./parties/parties.module";
     SettingsModule,
     PartiesModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

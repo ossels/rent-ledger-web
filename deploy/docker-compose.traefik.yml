@@ -1,0 +1,28 @@
+# Layered when the host already runs a Traefik on ports 80/443 with the Docker
+# provider (this VPS: the n8n stack's traefik, network n8n_default, certresolver
+# mytlschallenge). RentLedger is announced purely by labels on its own container —
+# Traefik's config and every co-hosted app remain untouched.
+#
+#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.traefik.yml up -d --build
+#
+# TLS is issued by Traefik's ACME TLS challenge the moment rentledger.ossels.ai's
+# A record resolves to this server; until then Traefik serves its default cert and retries.
+
+services:
+  web:
+    networks:
+      - default
+      - traefik
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "n8n_default"
+      traefik.http.routers.rentledger.rule: "Host(`rentledger.ossels.ai`)"
+      traefik.http.routers.rentledger.entrypoints: "websecure"
+      traefik.http.routers.rentledger.tls: "true"
+      traefik.http.routers.rentledger.tls.certresolver: "mytlschallenge"
+      traefik.http.services.rentledger.loadbalancer.server.port: "3000"
+
+networks:
+  traefik:
+    external: true
+    name: n8n_default
