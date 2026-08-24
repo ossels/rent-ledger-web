@@ -39,6 +39,14 @@ npm run dev              # web on :3000, api on :4000
 Open http://localhost:3000. The web app proxies `/api/*` to the NestJS server
 (set `API_ORIGIN` to point elsewhere).
 
+## Login
+
+Every route requires a signed-in session (httpOnly JWT cookie, 30 days). On first run the
+app shows a **setup screen** that creates the first account; after that, setup is locked and
+the login screen appears instead. Set a real `JWT_SECRET` in `apps/api/.env` for production.
+Another account (e.g. the other owner) can be added while signed in via
+`POST /api/auth/users` with `{ name, email, password }`.
+
 ## PWA
 
 - `apps/web/src/app/manifest.ts` — installable manifest (standalone, portrait, themed `#0E332D`).
@@ -48,9 +56,10 @@ Open http://localhost:3000. The web app proxies `/api/*` to the NestJS server
 
 ## API surface
 
-All under `/api`:
+All under `/api` (auth-guarded except `auth/status`, `auth/setup`, `auth/login`):
 
-- `GET/POST /buildings`, `GET/PATCH /buildings/:id`
+- `GET /auth/status`, `POST /auth/setup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, `POST /auth/users`
+- `GET/POST /buildings`, `GET/PATCH /buildings/:id` — PATCH takes `archived: true` to retire a building
 - `GET /entries?month=2026-08&buildingId=…`, `POST /entries`, `PATCH/DELETE /entries/:id`
 - `POST /entries/prefill` — one awaited rent row per building for a month
 - `GET /ledger/months` — every month with totals (collected, awaited, expenses, net, per-owner share)
