@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button, Input, SegmentedControl, Sheet, SplitBar } from "@/components/ds";
 import { useLedger } from "@/lib/store";
-import { formatNumber } from "@/lib/format";
+import { formatNumber, shareLabel } from "@/lib/format";
 import type { Building, OwnerKind } from "@/lib/api";
 
 export interface BuildingSheetProps {
@@ -86,10 +86,8 @@ export function BuildingSheet({ open, onClose, building, onArchived }: BuildingS
     >
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-14, 14px)" }}>
         <Input label="Building name" value={name} onChange={setName} placeholder="Sai Nivas" />
-        <div style={{ display: "flex", gap: "var(--space-10)" }}>
-          <Input label="Unit" value={unit} onChange={setUnit} placeholder="2F" style={{ flex: 1 }} />
-          <Input label="Area" value={area} onChange={setArea} placeholder="Kothrud" style={{ flex: 2 }} />
-        </div>
+        <Input label="Unit" value={unit} onChange={setUnit} placeholder="2F" />
+        <Input label="Area" value={area} onChange={setArea} placeholder="Kothrud" />
         <Input label="Tenant" value={tenant} onChange={setTenant} placeholder="Deshpande family" />
         <Input label="Monthly rent" amount prefix={currency} value={rent} onChange={setRent} />
 
@@ -110,7 +108,7 @@ export function BuildingSheet({ open, onClose, building, onArchived }: BuildingS
         {owner === "SHARED" ? (
           <div>
             <Input
-              label={`${nameA}’s share`}
+              label={shareLabel(nameA)}
               amount
               prefix={currency}
               value={String(a)}

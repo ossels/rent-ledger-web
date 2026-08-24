@@ -36,3 +36,8 @@ export function currentMonthKey(): string {
 export function formatNumber(value: number, locale = "en-IN"): string {
   return Math.abs(value).toLocaleString(locale, { maximumFractionDigits: 0 });
 }
+
+/** "Ravi" → "Ravi’s share"; the default owner name "You" → "Your share". */
+export function shareLabel(name: string): string {
+  return name.trim().toLowerCase() === "you" ? "Your share" : `${name}’s share`;
+}

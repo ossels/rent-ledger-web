@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Checkbox, Input, SegmentedControl, Select, Sheet, SplitBar } from "@/components/ds";
 import { useLedger } from "@/lib/store";
-import { formatNumber, monthLabel } from "@/lib/format";
+import { formatNumber, monthLabel, shareLabel } from "@/lib/format";
 import type { EntryKind } from "@/lib/api";
 
 export function AddEntrySheet() {
@@ -86,7 +86,7 @@ export function AddEntrySheet() {
         {kind === "RENT" ? <Checkbox label="Received in full" checked={full} onChange={setFull} /> : null}
         <div>
           <Input
-            label={`${nameA}’s share`}
+            label={shareLabel(nameA)}
             amount
             prefix={currency}
             value={String(a)}

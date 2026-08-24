@@ -36,7 +36,7 @@ export function Sheet({ open, title, children, footer, onClose, style }: SheetPr
           </span>
           <IconButton icon="x" label="Close" size={36} onClick={onClose} />
         </div>
-        <div style={{ padding: "0 var(--space-16) var(--space-16)", overflowY: "auto" }}>{children}</div>
+        <div style={{ padding: "0 var(--space-16) var(--space-16)", overflowY: "auto", overflowX: "hidden" }}>{children}</div>
         {footer ? (
           <div
             style={{
