@@ -52,6 +52,8 @@ interface LedgerState {
   retry: () => void;
   markPaid: (entryId: string) => Promise<void>;
   addEntry: (entry: Omit<NewEntry, "month" | "day">) => Promise<void>;
+  updateEntry: (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind" | "month">>) => Promise<void>;
+  deleteEntry: (entryId: string) => Promise<void>;
   prefillMonth: () => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
   refreshBuildings: () => Promise<void>;
@@ -185,6 +187,22 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     [selectedMonth, loadMonth, refreshIndex],
   );
 
+  const updateEntry = useCallback(
+    async (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind" | "month">>) => {
+      await api.updateEntry(entryId, patch);
+      await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
+    },
+    [selectedMonth, loadMonth, refreshIndex],
+  );
+
+  const deleteEntry = useCallback(
+    async (entryId: string) => {
+      await api.deleteEntry(entryId);
+      await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
+    },
+    [selectedMonth, loadMonth, refreshIndex],
+  );
+
   const prefillMonth = useCallback(async () => {
     await api.prefillMonth(selectedMonth);
     await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
@@ -247,6 +265,8 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     retry: loadAll,
     markPaid,
     addEntry,
+    updateEntry,
+    deleteEntry,
     prefillMonth,
     updateSettings,
     refreshBuildings,

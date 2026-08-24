@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Amount, Badge, Button, Card, EmptyState, ListRow, MonthNav, SplitBar, StatTile } from "@/components/ds";
+import { Amount, Badge, Button, Card, EmptyState, IconButton, ListRow, MonthNav, SplitBar, StatTile } from "@/components/ds";
+import { EntryEditSheet } from "@/components/entry-edit-sheet";
 import { ScreenState } from "@/components/screen-state";
 import { useLedger } from "@/lib/store";
 import { formatNumber, monthAbbr, monthLabel } from "@/lib/format";
-import type { MonthTotals } from "@/lib/api";
+import type { Entry, MonthTotals } from "@/lib/api";
 
 function MonthSummary({ totals }: { totals: MonthTotals }) {
   const { currency, locale, partyName } = useLedger();
@@ -55,6 +57,7 @@ export function MonthScreen() {
     monthDetail, monthLoading, markPaid, openSheet, prefillMonth, settings,
   } = useLedger();
 
+  const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const idx = monthKeys.indexOf(selectedMonth);
   const label = monthLabel(selectedMonth);
   const abbr = monthAbbr(selectedMonth);
@@ -69,7 +72,7 @@ export function MonthScreen() {
   return (
     <ScreenState>
       <div>
-        <div style={{ background: "var(--surface-inverse)", padding: "var(--space-12) var(--space-16) var(--space-20)" }}>
+        <div style={{ background: "var(--surface-inverse)", padding: "calc(var(--space-12) + var(--safe-top)) var(--space-16) var(--space-20)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-mark-inverse.svg" width="26" height="26" alt="" />
@@ -126,17 +129,30 @@ export function MonthScreen() {
                         currency={currency}
                         meta={collected ? `${e.day} ${abbr}` : undefined}
                         trailing={
-                          collected ? null : (
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              onClick={() => markPaid(e.id)}
-                            >
-                              Mark paid
-                            </Button>
-                          )
+                          <>
+                            {collected ? null : (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  markPaid(e.id);
+                                }}
+                              >
+                                Mark paid
+                              </Button>
+                            )}
+                            <IconButton
+                              icon="pencil"
+                              label="Edit entry"
+                              size={34}
+                              onClick={(ev) => {
+                                ev.stopPropagation();
+                                setEditingEntry(e);
+                              }}
+                            />
+                          </>
                         }
-                        chevron={collected}
                       />
                     );
                   })}
@@ -165,6 +181,8 @@ export function MonthScreen() {
                           amountTone="negative"
                           currency={currency}
                           meta={`${e.day} ${abbr}`}
+                          onClick={() => setEditingEntry(e)}
+                          trailing={<IconButton icon="pencil" label="Edit entry" size={34} onClick={(ev) => { ev.stopPropagation(); setEditingEntry(e); }} />}
                         />
                       );
                     })
@@ -179,6 +197,7 @@ export function MonthScreen() {
           </Button>
           <div style={{ height: 8 }} />
         </div>
+        {editingEntry ? <EntryEditSheet key={editingEntry.id} entry={editingEntry} open onClose={() => setEditingEntry(null)} /> : null}
       </div>
     </ScreenState>
   );

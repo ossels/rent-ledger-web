@@ -21,7 +21,7 @@ export function TopBar({ title, subtitle, back, onBack, actions, tone = "ink", s
         display: "flex",
         alignItems: "center",
         gap: "var(--space-8)",
-        padding: "var(--space-12) var(--space-12)",
+        padding: "calc(var(--space-12) + var(--safe-top)) var(--space-12) var(--space-12)",
         background: inverse ? "var(--surface-inverse)" : "var(--surface-card)",
         color: inverse ? "var(--text-on-inverse)" : "var(--text-strong)",
         borderBottom: inverse ? "none" : "var(--border-width) solid var(--border-hairline)",

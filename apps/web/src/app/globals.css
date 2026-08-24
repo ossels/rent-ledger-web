@@ -119,6 +119,10 @@
   --dur-base:220ms;
   --dur-sheet:320ms;
   --press-scale:.98;
+
+  /* --- Device safe areas (notch / status bar / gesture bar) --- */
+  --safe-top:env(safe-area-inset-top, 0px);
+  --safe-bottom:env(safe-area-inset-bottom, 0px);
 }
 
 *,*::before,*::after{box-sizing:border-box}

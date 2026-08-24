@@ -23,7 +23,7 @@ export function TabBar({ items = [], value, onChange, style }: TabBarProps) {
         display: "flex",
         alignItems: "stretch",
         gap: 2,
-        padding: "var(--space-6) var(--space-8) var(--space-10)",
+        padding: "var(--space-6) var(--space-8) calc(var(--space-10) + var(--safe-bottom))",
         background: "rgba(255,255,255,.88)",
         backdropFilter: "var(--blur-sheet)",
         borderTop: "var(--border-width) solid var(--border-hairline)",

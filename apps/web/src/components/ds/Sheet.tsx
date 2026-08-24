@@ -42,7 +42,7 @@ export function Sheet({ open, title, children, footer, onClose, style }: SheetPr
             style={{
               display: "flex",
               gap: "var(--space-10)",
-              padding: "var(--space-12) var(--space-16) var(--space-20)",
+              padding: "var(--space-12) var(--space-16) calc(var(--space-20) + var(--safe-bottom))",
               borderTop: "var(--border-width) solid var(--border-hairline)",
               background: "var(--surface-card)",
             }}

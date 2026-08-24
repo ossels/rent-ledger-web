@@ -29,7 +29,7 @@ export function AuthScreen() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ background: "var(--surface-inverse)", padding: "var(--space-40) var(--space-20) var(--space-32)", textAlign: "center" }}>
+      <div style={{ background: "var(--surface-inverse)", padding: "calc(var(--space-40) + var(--safe-top)) var(--space-20) var(--space-32)", textAlign: "center" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo-mark-inverse.svg" width="56" height="56" alt="" />
         <div
