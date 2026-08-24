@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: rentledger-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: rentledger
+      POSTGRES_PASSWORD: rentledger
+      POSTGRES_DB: rentledger
+    ports:
+      - "5435:5432"
+    volumes:
+      - rentledger-pgdata:/var/lib/postgresql/data
+
+volumes:
+  rentledger-pgdata:

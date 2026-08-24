@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// The two owners of the household ledger. `key` is the stable identity the
+// design system's party colors hang off ("a" = teal, "b" = marigold).
+model Party {
+  id   String @id @default(cuid())
+  key  String @unique // "a" | "b"
+  name String
+  note String?
+
+  @@map("parties")
+}
+
+enum OwnerKind {
+  A
+  B
+  SHARED
+}
+
+model Building {
+  id       String    @id @default(cuid())
+  name     String
+  unit     String
+  area     String?
+  tenant   String?
+  rent     Int // agreed monthly rent, whole rupees
+  splitA   Int // party A's fixed share of the rent
+  splitB   Int // party B's fixed share of the rent
+  owner    OwnerKind
+  archived Boolean   @default(false)
+  entries  Entry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("buildings")
+}
+
+enum EntryKind {
+  RENT
+  EXPENSE
+}
+
+enum EntryStatus {
+  COLLECTED
+  AWAITED
+  PAID
+}
+
+// One ledger line. Nothing is ever overwritten: history stays browsable by month.
+model Entry {
+  id         String      @id @default(cuid())
+  building   Building    @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  buildingId String
+  kind       EntryKind
+  month      String // "2026-08"
+  day        Int
+  total      Int // whole rupees
+  splitA     Int
+  splitB     Int
+  status     EntryStatus
+  note       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([month])
+  @@index([buildingId, month])
+  @@map("entries")
+}
+
+model Settings {
+  id           Int     @id @default(1)
+  currencyCode String  @default("INR")
+  locale       String  @default("en-IN")
+  timezone     String  @default("Asia/Kolkata")
+  autoCarry    Boolean @default(true)
+  reminder     Boolean @default(true)
+  confirmClose Boolean @default(false)
+
+  @@map("settings")
+}
