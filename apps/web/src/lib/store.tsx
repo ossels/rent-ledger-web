@@ -11,9 +11,12 @@ import {
 } from "react";
 import {
   api,
+  ApiError,
+  type AuthUser,
   type Building,
   type MonthDetail,
   type MonthSummary,
+  type NewBuilding,
   type NewEntry,
   type Party,
   type Settings,
@@ -21,6 +24,13 @@ import {
 import { currencySymbol, currentMonthKey } from "./format";
 
 interface LedgerState {
+  authChecked: boolean;
+  user: AuthUser | null;
+  setupRequired: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  setupAccount: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+
   loading: boolean;
   error: string | null;
   settings: Settings | null;
@@ -45,11 +55,17 @@ interface LedgerState {
   prefillMonth: () => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
   refreshBuildings: () => Promise<void>;
+  addBuilding: (data: NewBuilding) => Promise<void>;
+  updateBuilding: (id: string, data: Partial<NewBuilding> & { archived?: boolean }) => Promise<void>;
+  updateParty: (key: "a" | "b", data: { name?: string; note?: string }) => Promise<void>;
 }
 
 const LedgerContext = createContext<LedgerState | null>(null);
 
 export function LedgerProvider({ children }: { children: ReactNode }) {
+  const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [setupRequired, setSetupRequired] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -71,15 +87,56 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
       setBuildings(b);
       setMonthsIndex(m);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not reach the ledger");
+      if (e instanceof ApiError && e.status === 401) {
+        setUser(null);
+      } else {
+        setError(e instanceof Error ? e.message : "Could not reach the ledger");
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Establish the session before touching ledger data.
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+    (async () => {
+      try {
+        const status = await api.authStatus();
+        setSetupRequired(status.setupRequired);
+        if (!status.setupRequired) {
+          try {
+            setUser(await api.me());
+          } catch {
+            setUser(null);
+          }
+        }
+      } catch {
+        setError("Could not reach the ledger");
+        setLoading(false);
+      } finally {
+        setAuthChecked(true);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (user) loadAll();
+  }, [user, loadAll]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    setUser(await api.login(email, password));
+    setSetupRequired(false);
+  }, []);
+
+  const setupAccount = useCallback(async (name: string, email: string, password: string) => {
+    setUser(await api.setupAccount(name, email, password));
+    setSetupRequired(false);
+  }, []);
+
+  const logout = useCallback(async () => {
+    await api.logout();
+    setUser(null);
+  }, []);
 
   const loadMonth = useCallback(async (key: string) => {
     setMonthLoading(true);
@@ -142,7 +199,34 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     setBuildings(await api.buildings());
   }, []);
 
+  const addBuilding = useCallback(
+    async (data: NewBuilding) => {
+      await api.createBuilding(data);
+      await refreshBuildings();
+    },
+    [refreshBuildings],
+  );
+
+  const updateBuilding = useCallback(
+    async (id: string, data: Partial<NewBuilding> & { archived?: boolean }) => {
+      await api.updateBuilding(id, data);
+      await refreshBuildings();
+    },
+    [refreshBuildings],
+  );
+
+  const updateParty = useCallback(async (key: "a" | "b", data: { name?: string; note?: string }) => {
+    await api.updateParty(key, data);
+    setParties(await api.parties());
+  }, []);
+
   const value: LedgerState = {
+    authChecked,
+    user,
+    setupRequired,
+    login,
+    setupAccount,
+    logout,
     loading,
     error,
     settings,
@@ -166,6 +250,9 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     prefillMonth,
     updateSettings,
     refreshBuildings,
+    addBuilding,
+    updateBuilding,
+    updateParty,
   };
 
   return <LedgerContext.Provider value={value}>{children}</LedgerContext.Provider>;

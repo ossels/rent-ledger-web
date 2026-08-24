@@ -90,7 +90,21 @@ export interface NewBuilding {
   owner: OwnerKind;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+}
+
 const BASE = "/api";
+
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -105,12 +119,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       // keep the default message
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status);
   }
   return res.json();
 }
 
 export const api = {
+  authStatus: () => request<{ setupRequired: boolean }>("/auth/status"),
+  me: () => request<AuthUser>("/auth/me"),
+  login: (email: string, password: string) =>
+    request<AuthUser>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  setupAccount: (name: string, email: string, password: string) =>
+    request<AuthUser>("/auth/setup", { method: "POST", body: JSON.stringify({ name, email, password }) }),
+  logout: () => request<{ loggedOut: boolean }>("/auth/logout", { method: "POST" }),
+
   parties: () => request<Party[]>("/parties"),
   updateParty: (key: string, data: Partial<Pick<Party, "name" | "note">>) =>
     request<Party>(`/parties/${key}`, { method: "PATCH", body: JSON.stringify(data) }),

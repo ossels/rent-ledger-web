@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { TabBar } from "@/components/ds";
 import { AddEntrySheet } from "@/components/add-entry-sheet";
+import { AuthScreen } from "@/components/auth-screen";
 import { useLedger } from "@/lib/store";
 
 const TABS = [
@@ -23,11 +24,20 @@ function tabForPath(pathname: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { sheetOpen } = useLedger();
+  const { sheetOpen, authChecked, user, error } = useLedger();
 
-  return (
-    <div className="phone">
-      <div className="screen">
+  let body: ReactNode;
+  if (!authChecked) {
+    body = (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)" }}>
+        Opening the ledger…
+      </div>
+    );
+  } else if (!user && !error) {
+    body = <AuthScreen />;
+  } else {
+    body = (
+      <>
         <div className="scroll">{children}</div>
         <TabBar
           value={tabForPath(pathname)}
@@ -38,7 +48,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           items={TABS}
         />
         {sheetOpen ? <AddEntrySheet /> : null}
-      </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="phone">
+      <div className="screen">{body}</div>
     </div>
   );
 }

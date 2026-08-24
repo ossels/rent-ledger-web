@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { Card, ListRow, Select, Switch, TopBar } from "@/components/ds";
+import { PersonSheet } from "@/components/person-sheet";
 import { ScreenState } from "@/components/screen-state";
 import { useLedger } from "@/lib/store";
 
 export function SettingsScreen() {
-  const { settings, updateSettings, parties, buildings, partyName } = useLedger();
+  const { settings, updateSettings, parties, buildings, partyName, user, logout } = useLedger();
+  const [editingParty, setEditingParty] = useState<"a" | "b" | null>(null);
   if (!settings) return <ScreenState>{null}</ScreenState>;
+  const partyBeingEdited = parties.find((p) => p.key === editingParty);
 
   const owned = (key: "a" | "b") =>
     buildings.filter((b) => (key === "a" ? b.splitA > 0 : b.splitB > 0)).length;
@@ -78,6 +82,8 @@ export function SettingsScreen() {
                 }
                 title={p.name}
                 subtitle={`${p.note ?? ""}${p.note ? " · " : ""}owner of ${owned(p.key)} buildings`}
+                chevron
+                onClick={() => setEditingParty(p.key)}
               />
             ))}
           </Card>
@@ -106,6 +112,7 @@ export function SettingsScreen() {
 
           <Card pad="sm">
             <ListRow
+              ledger
               leadingIcon="download"
               title="Export ledger"
               subtitle="CSV of every entry"
@@ -114,6 +121,13 @@ export function SettingsScreen() {
                 window.open("/api/entries", "_blank");
               }}
             />
+            <ListRow
+              leadingIcon="shield-check"
+              title="Sign out"
+              subtitle={user?.email}
+              chevron
+              onClick={logout}
+            />
           </Card>
           <div
             style={{ textAlign: "center", fontSize: "var(--text-micro)", color: "var(--text-faint)", letterSpacing: "var(--track-label)", textTransform: "uppercase" }}
@@ -121,6 +135,9 @@ export function SettingsScreen() {
             RentLedger · {partyName("a")} & {partyName("b")}
           </div>
         </div>
+        {partyBeingEdited ? (
+          <PersonSheet key={partyBeingEdited.key} party={partyBeingEdited} open onClose={() => setEditingParty(null)} />
+        ) : null}
       </div>
     </ScreenState>
   );

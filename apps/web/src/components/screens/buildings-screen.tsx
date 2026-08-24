@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Amount, Button, Card, SplitBar, TopBar } from "@/components/ds";
+import { BuildingSheet } from "@/components/building-sheet";
 import { ScreenState } from "@/components/screen-state";
 import { useLedger } from "@/lib/store";
 import { formatNumber } from "@/lib/format";
@@ -9,7 +11,8 @@ import type { OwnerKind } from "@/lib/api";
 
 export function BuildingsScreen() {
   const router = useRouter();
-  const { buildings, currency, locale, partyName, openSheet } = useLedger();
+  const { buildings, currency, locale, partyName } = useLedger();
+  const [adding, setAdding] = useState(false);
 
   const groups: { key: OwnerKind; label: string }[] = [
     { key: "SHARED", label: "Shared" },
@@ -59,10 +62,11 @@ export function BuildingsScreen() {
               </div>
             );
           })}
-          <Button variant="secondary" full size="md" icon="plus" onClick={openSheet}>
-            Add an entry
+          <Button variant="secondary" full size="md" icon="plus" onClick={() => setAdding(true)}>
+            Add a building
           </Button>
         </div>
+        {adding ? <BuildingSheet open onClose={() => setAdding(false)} /> : null}
       </div>
     </ScreenState>
   );

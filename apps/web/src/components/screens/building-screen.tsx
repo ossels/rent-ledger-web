@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Amount, Badge, Card, ListRow, SplitBar, TopBar } from "@/components/ds";
+import { Amount, Badge, Card, IconButton, ListRow, SplitBar, TopBar } from "@/components/ds";
+import { BuildingSheet } from "@/components/building-sheet";
 import { ScreenState } from "@/components/screen-state";
 import { useLedger } from "@/lib/store";
 import type { Entry } from "@/lib/api";
@@ -13,6 +14,7 @@ export function BuildingScreen({ buildingId }: { buildingId: string }) {
   const { buildings, currency, locale, partyName, monthKeys, selectMonth, loading } = useLedger();
   const building = buildings.find((b) => b.id === buildingId);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -53,7 +55,13 @@ export function BuildingScreen({ buildingId }: { buildingId: string }) {
   return (
     <ScreenState>
       <div>
-        <TopBar title={building.name} subtitle={[ownerLabel, building.area].filter(Boolean).join(" · ")} back onBack={() => router.back()} />
+        <TopBar
+          title={building.name}
+          subtitle={[ownerLabel, building.area].filter(Boolean).join(" · ")}
+          back
+          onBack={() => router.back()}
+          actions={<IconButton icon="pencil" label="Edit building" variant="inverse" size={38} onClick={() => setEditing(true)} />}
+        />
         <div style={{ padding: "var(--space-16)", display: "flex", flexDirection: "column", gap: "var(--space-16)" }}>
           <Card pad="lg">
             <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
@@ -110,6 +118,14 @@ export function BuildingScreen({ buildingId }: { buildingId: string }) {
             </Card>
           </div>
         </div>
+        {editing ? (
+          <BuildingSheet
+            open
+            building={building}
+            onClose={() => setEditing(false)}
+            onArchived={() => router.replace("/buildings")}
+          />
+        ) : null}
       </div>
     </ScreenState>
   );
