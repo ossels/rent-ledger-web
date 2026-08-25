@@ -51,7 +51,7 @@ interface LedgerState {
   closeSheet: () => void;
   retry: () => void;
   markPaid: (entryId: string) => Promise<void>;
-  addEntry: (entry: Omit<NewEntry, "month" | "day">) => Promise<void>;
+  addEntry: (entry: Omit<NewEntry, "month">) => Promise<void>;
   updateEntry: (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind" | "month">>) => Promise<void>;
   deleteEntry: (entryId: string) => Promise<void>;
   prefillMonth: () => Promise<void>;
@@ -180,8 +180,8 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   );
 
   const addEntry = useCallback(
-    async (entry: Omit<NewEntry, "month" | "day">) => {
-      await api.createEntry({ ...entry, month: selectedMonth, day: new Date().getDate() });
+    async (entry: Omit<NewEntry, "month">) => {
+      await api.createEntry({ ...entry, month: selectedMonth });
       await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
     },
     [selectedMonth, loadMonth, refreshIndex],

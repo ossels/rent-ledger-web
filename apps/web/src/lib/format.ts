@@ -41,3 +41,18 @@ export function formatNumber(value: number, locale = "en-IN"): string {
 export function shareLabel(name: string): string {
   return name.trim().toLowerCase() === "you" ? "Your share" : `${name}’s share`;
 }
+
+export function daysInMonth(key: string): number {
+  const [y, m] = key.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+/** ("2026-08", 5) → "2026-08-05" for <input type="date"> values. */
+export function monthDate(key: string, day: number): string {
+  return `${key}-${String(day).padStart(2, "0")}`;
+}
+
+export function todayISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}

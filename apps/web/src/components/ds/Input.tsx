@@ -15,10 +15,12 @@ export interface InputProps {
   error?: string;
   disabled?: boolean;
   inputMode?: "numeric" | "text" | "decimal" | "tel" | "search" | "email" | "url";
+  min?: string;
+  max?: string;
   style?: CSSProperties;
 }
 
-export function Input({ label, hint, value, onChange, placeholder, prefix, suffix, type = "text", amount, error, disabled, inputMode, style }: InputProps) {
+export function Input({ label, hint, value, onChange, placeholder, prefix, suffix, type = "text", amount, error, disabled, inputMode, min, max, style }: InputProps) {
   const [focus, setFocus] = useState(false);
   return (
     <label style={{ display: "block", ...style }}>
@@ -59,6 +61,8 @@ export function Input({ label, hint, value, onChange, placeholder, prefix, suffi
           value={value}
           placeholder={placeholder}
           disabled={disabled}
+          min={min}
+          max={max}
           inputMode={inputMode || (amount ? "numeric" : undefined)}
           onChange={(e) => onChange && onChange(e.target.value)}
           onFocus={() => setFocus(true)}

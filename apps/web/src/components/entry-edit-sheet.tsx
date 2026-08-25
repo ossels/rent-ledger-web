@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button, Input, SegmentedControl, Sheet, SplitBar } from "@/components/ds";
 import { useLedger } from "@/lib/store";
-import { formatNumber, shareLabel } from "@/lib/format";
+import { daysInMonth, formatNumber, monthDate, shareLabel } from "@/lib/format";
 import type { Entry, EntryStatus } from "@/lib/api";
 
 export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: boolean; onClose: () => void }) {
@@ -14,7 +14,7 @@ export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: b
   const [total, setTotal] = useState(String(entry.total));
   const [shareA, setShareA] = useState(String(entry.splitA));
   const [note, setNote] = useState(entry.note ?? "");
-  const [day, setDay] = useState(String(entry.day));
+  const [date, setDate] = useState(monthDate(entry.month, entry.day));
   const [status, setStatus] = useState<EntryStatus>(entry.status);
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -22,7 +22,7 @@ export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: b
 
   const t = Number(total) || 0;
   const a = Math.min(Number(shareA) || 0, t);
-  const d = Math.min(Math.max(Number(day) || 1, 1), 31);
+  const d = Math.min(Math.max(Number(date.slice(8, 10)) || entry.day, 1), daysInMonth(entry.month));
   const nameA = partyName("a");
   const nameB = partyName("b");
 
@@ -110,7 +110,15 @@ export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: b
             />
           </div>
         </div>
-        <Input label="Day of month" value={day} onChange={setDay} inputMode="numeric" hint="When the money moved." />
+        <Input
+          label="Date"
+          type="date"
+          value={date}
+          onChange={setDate}
+          min={monthDate(entry.month, 1)}
+          max={monthDate(entry.month, daysInMonth(entry.month))}
+          hint="When the money moved. Stays within this month’s ledger."
+        />
         <Input label="Note" value={note} onChange={setNote} placeholder={isRent ? "Paid by UPI" : "Plumbing, 2F bathroom"} />
 
         {confirmDelete ? (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Checkbox, Input, SegmentedControl, Select, Sheet, SplitBar } from "@/components/ds";
 import { useLedger } from "@/lib/store";
-import { formatNumber, monthLabel, shareLabel } from "@/lib/format";
+import { daysInMonth, formatNumber, monthDate, monthLabel, shareLabel, todayISO } from "@/lib/format";
 import type { EntryKind } from "@/lib/api";
 
 export function AddEntrySheet() {
@@ -14,6 +14,11 @@ export function AddEntrySheet() {
   const [shareA, setShareA] = useState("");
   const [note, setNote] = useState("");
   const [full, setFull] = useState(true);
+  // Default to today; when browsing an older month, fall inside that month instead.
+  const [date, setDate] = useState(() => {
+    const today = todayISO();
+    return today.startsWith(selectedMonth) ? today : monthDate(selectedMonth, 1);
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,6 +48,7 @@ export function AddEntrySheet() {
         total: t,
         splitA: a,
         splitB: t - a,
+        day: Math.min(Math.max(Number(date.slice(8, 10)) || 1, 1), daysInMonth(selectedMonth)),
         note: note || undefined,
         status: kind === "RENT" ? (full ? "COLLECTED" : "AWAITED") : "PAID",
       });
@@ -83,6 +89,14 @@ export function AddEntrySheet() {
           options={buildings.map((x) => ({ value: x.id, label: `${x.name} — ${x.unit}` }))}
         />
         <Input label={kind === "RENT" ? "Amount received" : "Amount spent"} amount prefix={currency} value={total} onChange={setTotal} />
+        <Input
+          label="Date"
+          type="date"
+          value={date}
+          onChange={setDate}
+          min={monthDate(selectedMonth, 1)}
+          max={monthDate(selectedMonth, daysInMonth(selectedMonth))}
+        />
         {kind === "RENT" ? <Checkbox label="Received in full" checked={full} onChange={setFull} /> : null}
         <div>
           <Input
