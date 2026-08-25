@@ -36,7 +36,9 @@ export function AddEntrySheet() {
   const a = Math.min(Number(shareA) || 0, t);
   const nameA = partyName("a");
   const nameB = partyName("b");
-  const monthWord = monthLabel(selectedMonth).split(" ")[0];
+  // The entry lands in the ledger month of whatever date was picked.
+  const entryMonth = date.slice(0, 7) || selectedMonth;
+  const monthWord = monthLabel(entryMonth).split(" ")[0];
 
   const save = async () => {
     setSaving(true);
@@ -48,7 +50,8 @@ export function AddEntrySheet() {
         total: t,
         splitA: a,
         splitB: t - a,
-        day: Math.min(Math.max(Number(date.slice(8, 10)) || 1, 1), daysInMonth(selectedMonth)),
+        month: entryMonth,
+        day: Math.min(Math.max(Number(date.slice(8, 10)) || 1, 1), daysInMonth(entryMonth)),
         note: note || undefined,
         status: kind === "RENT" ? (full ? "COLLECTED" : "AWAITED") : "PAID",
       });
@@ -89,14 +92,7 @@ export function AddEntrySheet() {
           options={buildings.map((x) => ({ value: x.id, label: `${x.name} — ${x.unit}` }))}
         />
         <Input label={kind === "RENT" ? "Amount received" : "Amount spent"} amount prefix={currency} value={total} onChange={setTotal} />
-        <Input
-          label="Date"
-          type="date"
-          value={date}
-          onChange={setDate}
-          min={monthDate(selectedMonth, 1)}
-          max={monthDate(selectedMonth, daysInMonth(selectedMonth))}
-        />
+        <Input label="Date" type="date" value={date} onChange={setDate} />
         {kind === "RENT" ? <Checkbox label="Received in full" checked={full} onChange={setFull} /> : null}
         <div>
           <Input

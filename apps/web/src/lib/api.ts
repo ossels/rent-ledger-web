@@ -147,7 +147,7 @@ export const api = {
   month: (key: string) => request<MonthDetail>(`/ledger/months/${key}`),
 
   createEntry: (data: NewEntry) => request<Entry>("/entries", { method: "POST", body: JSON.stringify(data) }),
-  updateEntry: (id: string, data: Partial<Omit<NewEntry, "buildingId" | "kind" | "month">>) =>
+  updateEntry: (id: string, data: Partial<Omit<NewEntry, "buildingId" | "kind">>) =>
     request<Entry>(`/entries/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteEntry: (id: string) => request<{ deleted: boolean }>(`/entries/${id}`, { method: "DELETE" }),
   prefillMonth: (month: string) =>

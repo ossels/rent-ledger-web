@@ -51,8 +51,8 @@ interface LedgerState {
   closeSheet: () => void;
   retry: () => void;
   markPaid: (entryId: string) => Promise<void>;
-  addEntry: (entry: Omit<NewEntry, "month">) => Promise<void>;
-  updateEntry: (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind" | "month">>) => Promise<void>;
+  addEntry: (entry: NewEntry) => Promise<void>;
+  updateEntry: (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind">>) => Promise<void>;
   deleteEntry: (entryId: string) => Promise<void>;
   prefillMonth: () => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
@@ -180,17 +180,21 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   );
 
   const addEntry = useCallback(
-    async (entry: Omit<NewEntry, "month">) => {
-      await api.createEntry({ ...entry, month: selectedMonth });
-      await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
+    async (entry: NewEntry) => {
+      await api.createEntry(entry);
+      // Follow the entry: if it was dated into another month, show that month.
+      setSelectedMonth(entry.month);
+      await Promise.all([loadMonth(entry.month), refreshIndex()]);
     },
-    [selectedMonth, loadMonth, refreshIndex],
+    [loadMonth, refreshIndex],
   );
 
   const updateEntry = useCallback(
-    async (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind" | "month">>) => {
+    async (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind">>) => {
       await api.updateEntry(entryId, patch);
-      await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
+      const target = patch.month ?? selectedMonth;
+      setSelectedMonth(target);
+      await Promise.all([loadMonth(target), refreshIndex()]);
     },
     [selectedMonth, loadMonth, refreshIndex],
   );

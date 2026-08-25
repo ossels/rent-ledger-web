@@ -6,7 +6,7 @@ import { Amount, Badge, Button, Card, EmptyState, IconButton, ListRow, MonthNav,
 import { EntryEditSheet } from "@/components/entry-edit-sheet";
 import { ScreenState } from "@/components/screen-state";
 import { useLedger } from "@/lib/store";
-import { addMonths, currentMonthKey, formatNumber, monthAbbr, monthLabel } from "@/lib/format";
+import { addMonths, formatNumber, monthAbbr, monthLabel } from "@/lib/format";
 import type { Entry, MonthTotals } from "@/lib/api";
 
 function MonthSummary({ totals }: { totals: MonthTotals }) {
@@ -88,7 +88,6 @@ export function MonthScreen() {
             sublabel={`${totals.countCollected} of ${totals.countTotal} collected`}
             onPrev={() => selectMonth(addMonths(selectedMonth, -1))}
             onNext={() => selectMonth(addMonths(selectedMonth, 1))}
-            nextDisabled={selectedMonth >= currentMonthKey()}
           />
           <div style={{ marginTop: 14 }}>
             <MonthSummary totals={totals} />

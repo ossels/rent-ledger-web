@@ -22,7 +22,9 @@ export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: b
 
   const t = Number(total) || 0;
   const a = Math.min(Number(shareA) || 0, t);
-  const d = Math.min(Math.max(Number(date.slice(8, 10)) || entry.day, 1), daysInMonth(entry.month));
+  // The picked date decides both the day and the ledger month the entry lives in.
+  const newMonth = date.slice(0, 7) || entry.month;
+  const d = Math.min(Math.max(Number(date.slice(8, 10)) || entry.day, 1), daysInMonth(newMonth));
   const nameA = partyName("a");
   const nameB = partyName("b");
 
@@ -35,6 +37,7 @@ export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: b
         splitA: a,
         splitB: t - a,
         note: note || undefined,
+        month: newMonth,
         day: d,
         status: isRent ? status : "PAID",
       });
@@ -115,9 +118,7 @@ export function EntryEditSheet({ entry, open, onClose }: { entry: Entry; open: b
           type="date"
           value={date}
           onChange={setDate}
-          min={monthDate(entry.month, 1)}
-          max={monthDate(entry.month, daysInMonth(entry.month))}
-          hint="When the money moved. Stays within this month’s ledger."
+          hint="Picking a date in another month moves the entry to that month’s ledger."
         />
         <Input label="Note" value={note} onChange={setNote} placeholder={isRent ? "Paid by UPI" : "Plumbing, 2F bathroom"} />
 

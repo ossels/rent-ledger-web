@@ -40,6 +40,12 @@ export class CreateEntryDto {
 }
 
 export class UpdateEntryDto {
+  // Moving an entry to another month's ledger is allowed — history is per-month,
+  // so the totals of both months recalculate from their own entries.
+  @IsOptional()
+  @Matches(MONTH_PATTERN, { message: "month must look like 2026-08" })
+  month?: string;
+
   @IsOptional()
   @IsInt()
   @Min(1)
