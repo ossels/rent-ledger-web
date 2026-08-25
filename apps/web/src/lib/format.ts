@@ -33,6 +33,13 @@ export function currentMonthKey(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
+/** ("2026-08", -1) → "2026-07" — step the ledger month arithmetically. */
+export function addMonths(key: string, delta: number): string {
+  const [y, m] = key.split("-").map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
 export function formatNumber(value: number, locale = "en-IN"): string {
   return Math.abs(value).toLocaleString(locale, { maximumFractionDigits: 0 });
 }

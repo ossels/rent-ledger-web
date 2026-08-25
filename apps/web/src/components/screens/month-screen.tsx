@@ -6,7 +6,7 @@ import { Amount, Badge, Button, Card, EmptyState, IconButton, ListRow, MonthNav,
 import { EntryEditSheet } from "@/components/entry-edit-sheet";
 import { ScreenState } from "@/components/screen-state";
 import { useLedger } from "@/lib/store";
-import { formatNumber, monthAbbr, monthLabel } from "@/lib/format";
+import { addMonths, currentMonthKey, formatNumber, monthAbbr, monthLabel } from "@/lib/format";
 import type { Entry, MonthTotals } from "@/lib/api";
 
 function MonthSummary({ totals }: { totals: MonthTotals }) {
@@ -53,12 +53,11 @@ function MonthSummary({ totals }: { totals: MonthTotals }) {
 export function MonthScreen() {
   const router = useRouter();
   const {
-    buildings, currency, locale, partyName, monthKeys, selectedMonth, selectMonth,
+    buildings, currency, locale, partyName, selectedMonth, selectMonth,
     monthDetail, monthLoading, markPaid, openSheet, prefillMonth, settings,
   } = useLedger();
 
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-  const idx = monthKeys.indexOf(selectedMonth);
   const label = monthLabel(selectedMonth);
   const abbr = monthAbbr(selectedMonth);
   const entries = monthDetail?.entries ?? [];
@@ -87,10 +86,9 @@ export function MonthScreen() {
             tone="ink"
             label={label}
             sublabel={`${totals.countCollected} of ${totals.countTotal} collected`}
-            onPrev={() => idx > 0 && selectMonth(monthKeys[idx - 1])}
-            onNext={() => idx < monthKeys.length - 1 && selectMonth(monthKeys[idx + 1])}
-            prevDisabled={idx <= 0}
-            nextDisabled={idx >= monthKeys.length - 1}
+            onPrev={() => selectMonth(addMonths(selectedMonth, -1))}
+            onNext={() => selectMonth(addMonths(selectedMonth, 1))}
+            nextDisabled={selectedMonth >= currentMonthKey()}
           />
           <div style={{ marginTop: 14 }}>
             <MonthSummary totals={totals} />
