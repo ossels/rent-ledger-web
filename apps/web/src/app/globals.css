@@ -137,11 +137,17 @@ button{font-family:inherit}
 .k-display{font-family:var(--font-display);font-weight:var(--weight-display);letter-spacing:var(--track-display);color:var(--text-strong)}
 :focus-visible{outline:none;box-shadow:var(--ring-focus)}
 
-/* --- App frame: one centred phone-width column, per the UI kit --- */
-body{display:flex;align-items:center;justify-content:center;padding:0}
-.phone{width:100%;max-width:430px;height:100vh;height:100dvh;max-height:900px;background:var(--surface-app);display:flex;overflow:hidden;box-shadow:var(--shadow-raised)}
+/* --- App frame: one centred phone-width column, per the UI kit ---
+   Sized by the height:100% chain, never by vh/dvh: on Android PWA reloads the
+   viewport units can briefly exceed the visible area, and a centered flex child
+   taller than the body clips equally at both ends (header + tab bar trimmed). */
+body{padding:0;overflow:hidden}
+.phone{width:100%;height:100%;background:var(--surface-app);display:flex;overflow:hidden}
 .screen{position:relative;flex:1;display:flex;flex-direction:column;min-width:0}
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 .scroll::-webkit-scrollbar{width:0}
-@media(min-width:520px){.phone{border-radius:28px;height:min(840px,100vh);height:min(840px,100dvh)}}
-@media(display-mode:standalone){body{background:var(--surface-app)}.phone{max-width:none;max-height:none;border-radius:0;box-shadow:none}}
+@media(min-width:520px){
+  body{display:flex;align-items:center;justify-content:center}
+  .phone{max-width:430px;height:min(840px,100%);border-radius:28px;box-shadow:var(--shadow-raised)}
+}
+@media(display-mode:standalone){body{background:var(--surface-app)}.phone{max-width:none;height:100%;border-radius:0;box-shadow:none}}
