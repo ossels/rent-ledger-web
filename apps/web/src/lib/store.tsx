@@ -14,6 +14,7 @@ import {
   ApiError,
   type AuthUser,
   type Building,
+  type Entry,
   type MonthDetail,
   type MonthSummary,
   type NewBuilding,
@@ -21,7 +22,7 @@ import {
   type Party,
   type Settings,
 } from "./api";
-import { currencySymbol, currentMonthKey } from "./format";
+import { currencySymbol, currentMonthKey, todayISO } from "./format";
 
 interface LedgerState {
   authChecked: boolean;
@@ -50,10 +51,13 @@ interface LedgerState {
   openSheet: () => void;
   closeSheet: () => void;
   retry: () => void;
-  markPaid: (entryId: string) => Promise<void>;
-  addEntry: (entry: NewEntry) => Promise<void>;
+  markPaid: (entry: Entry) => Promise<void>;
+  addEntry: (entry: NewEntry) => Promise<Entry>;
   updateEntry: (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind">>) => Promise<void>;
   deleteEntry: (entryId: string) => Promise<void>;
+  recordPayment: (entryId: string, payment: { amount: number; date: string; note?: string }) => Promise<void>;
+  deletePayment: (entryId: string, paymentId: string) => Promise<void>;
+  reloadMonth: () => Promise<void>;
   prefillMonth: () => Promise<void>;
   updateSettings: (patch: Partial<Settings>) => Promise<void>;
   refreshBuildings: () => Promise<void>;
@@ -171,23 +175,46 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     [parties],
   );
 
-  const markPaid = useCallback(
-    async (entryId: string) => {
-      await api.updateEntry(entryId, { status: "COLLECTED" });
+  const recordPayment = useCallback(
+    async (entryId: string, payment: { amount: number; date: string; note?: string }) => {
+      await api.addPayment(entryId, payment);
       await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
     },
     [selectedMonth, loadMonth, refreshIndex],
   );
 
+  const deletePayment = useCallback(
+    async (entryId: string, paymentId: string) => {
+      await api.deletePayment(entryId, paymentId);
+      await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
+    },
+    [selectedMonth, loadMonth, refreshIndex],
+  );
+
+  // "Mark paid" = record one payment for whatever is still outstanding, dated today.
+  const markPaid = useCallback(
+    async (entry: Entry) => {
+      const outstanding = entry.total - entry.received;
+      if (outstanding <= 0) return;
+      await recordPayment(entry.id, { amount: outstanding, date: todayISO() });
+    },
+    [recordPayment],
+  );
+
   const addEntry = useCallback(
     async (entry: NewEntry) => {
-      await api.createEntry(entry);
+      const created = await api.createEntry(entry);
       // Follow the entry: if it was dated into another month, show that month.
       setSelectedMonth(entry.month);
       await Promise.all([loadMonth(entry.month), refreshIndex()]);
+      return created;
     },
     [loadMonth, refreshIndex],
   );
+
+  const reloadMonth = useCallback(async () => {
+    await Promise.all([loadMonth(selectedMonth), refreshIndex()]);
+  }, [selectedMonth, loadMonth, refreshIndex]);
 
   const updateEntry = useCallback(
     async (entryId: string, patch: Partial<Omit<NewEntry, "buildingId" | "kind">>) => {
@@ -271,6 +298,9 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     addEntry,
     updateEntry,
     deleteEntry,
+    recordPayment,
+    deletePayment,
+    reloadMonth,
     prefillMonth,
     updateSettings,
     refreshBuildings,

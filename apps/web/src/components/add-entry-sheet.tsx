@@ -1,19 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Checkbox, Input, SegmentedControl, Select, Sheet, SplitBar } from "@/components/ds";
 import { useLedger } from "@/lib/store";
 import { daysInMonth, formatNumber, monthDate, monthLabel, shareLabel, todayISO } from "@/lib/format";
-import type { EntryKind } from "@/lib/api";
+import { api, type EntryKind } from "@/lib/api";
 
 export function AddEntrySheet() {
-  const { buildings, currency, locale, selectedMonth, partyName, addEntry, closeSheet, sheetOpen } = useLedger();
+  const { buildings, currency, locale, selectedMonth, partyName, addEntry, closeSheet, sheetOpen, reloadMonth } = useLedger();
   const [kind, setKind] = useState<EntryKind>("RENT");
   const [buildingId, setBuildingId] = useState(buildings[0]?.id ?? "");
   const [total, setTotal] = useState("");
   const [shareA, setShareA] = useState("");
   const [note, setNote] = useState("");
   const [full, setFull] = useState(true);
+  const [receivedNow, setReceivedNow] = useState("");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   // Default to today; when browsing an older month, fall inside that month instead.
   const [date, setDate] = useState(() => {
     const today = todayISO();
@@ -44,7 +47,7 @@ export function AddEntrySheet() {
     setSaving(true);
     setError(null);
     try {
-      await addEntry({
+      const created = await addEntry({
         kind,
         buildingId: building.id,
         total: t,
@@ -53,8 +56,14 @@ export function AddEntrySheet() {
         month: entryMonth,
         day: Math.min(Math.max(Number(date.slice(8, 10)) || 1, 1), daysInMonth(entryMonth)),
         note: note || undefined,
-        status: kind === "RENT" ? (full ? "COLLECTED" : "AWAITED") : "PAID",
       });
+      // Rent: record what actually arrived as the first payment installment.
+      if (kind === "RENT") {
+        const paid = full ? t : Math.min(Number(receivedNow) || 0, t);
+        if (paid > 0) await api.addPayment(created.id, { amount: paid, date });
+      }
+      if (receiptFile) await api.uploadReceipt(created.id, receiptFile);
+      await reloadMonth();
       closeSheet();
       setNote("");
     } catch (e) {
@@ -94,6 +103,17 @@ export function AddEntrySheet() {
         <Input label={kind === "RENT" ? "Amount received" : "Amount spent"} amount prefix={currency} value={total} onChange={setTotal} />
         <Input label="Date" type="date" value={date} onChange={setDate} />
         {kind === "RENT" ? <Checkbox label="Received in full" checked={full} onChange={setFull} /> : null}
+        {kind === "RENT" && !full ? (
+          <Input
+            label="Received so far"
+            amount
+            prefix={currency}
+            value={receivedNow}
+            onChange={setReceivedNow}
+            placeholder="0"
+            hint="Leave 0 if nothing has arrived yet — add installments later from the entry."
+          />
+        ) : null}
         <div>
           <Input
             label={shareLabel(nameA)}
@@ -114,6 +134,26 @@ export function AddEntrySheet() {
           </div>
         </div>
         <Input label="Note" placeholder={kind === "RENT" ? "Paid by UPI" : "Plumbing, 2F bathroom"} value={note} onChange={setNote} />
+        <div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              setReceiptFile(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
+          <Button variant="secondary" size="sm" icon="receipt-indian-rupee" onClick={() => fileRef.current?.click()}>
+            {receiptFile ? "Photo attached" : "Attach a photo"}
+          </Button>
+          {receiptFile ? (
+            <span style={{ marginLeft: "var(--space-10)", fontSize: "var(--text-label)", color: "var(--text-muted)" }}>
+              {receiptFile.name}
+            </span>
+          ) : null}
+        </div>
         {error ? <span style={{ fontSize: "var(--text-label)", color: "var(--text-negative)" }}>{error}</span> : null}
       </div>
     </Sheet>

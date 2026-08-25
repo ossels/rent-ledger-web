@@ -1,6 +1,6 @@
 export type OwnerKind = "A" | "B" | "SHARED";
 export type EntryKind = "RENT" | "EXPENSE";
-export type EntryStatus = "COLLECTED" | "AWAITED" | "PAID";
+export type EntryStatus = "COLLECTED" | "AWAITED" | "PARTIAL" | "PAID";
 
 export interface Party {
   id: string;
@@ -22,6 +22,14 @@ export interface Building {
   archived: boolean;
 }
 
+export interface Payment {
+  id: string;
+  entryId: string;
+  amount: number;
+  date: string; // "2026-09-05"
+  note?: string | null;
+}
+
 export interface Entry {
   id: string;
   buildingId: string;
@@ -29,10 +37,13 @@ export interface Entry {
   month: string;
   day: number;
   total: number;
+  received: number;
   splitA: number;
   splitB: number;
   status: EntryStatus;
   note?: string | null;
+  receiptPath?: string | null;
+  payments?: Payment[];
 }
 
 export interface MonthTotals {
@@ -132,6 +143,9 @@ export const api = {
   setupAccount: (name: string, email: string, password: string) =>
     request<AuthUser>("/auth/setup", { method: "POST", body: JSON.stringify({ name, email, password }) }),
   logout: () => request<{ loggedOut: boolean }>("/auth/logout", { method: "POST" }),
+  authUsers: () => request<(AuthUser & { createdAt: string })[]>("/auth/users"),
+  addAuthUser: (name: string, email: string, password: string) =>
+    request<AuthUser>("/auth/users", { method: "POST", body: JSON.stringify({ name, email, password }) }),
 
   parties: () => request<Party[]>("/parties"),
   updateParty: (key: string, data: Partial<Pick<Party, "name" | "note">>) =>
@@ -150,6 +164,19 @@ export const api = {
   updateEntry: (id: string, data: Partial<Omit<NewEntry, "buildingId" | "kind">>) =>
     request<Entry>(`/entries/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteEntry: (id: string) => request<{ deleted: boolean }>(`/entries/${id}`, { method: "DELETE" }),
+  addPayment: (entryId: string, data: { amount: number; date: string; note?: string }) =>
+    request<Entry>(`/entries/${entryId}/payments`, { method: "POST", body: JSON.stringify(data) }),
+  deletePayment: (entryId: string, paymentId: string) =>
+    request<Entry>(`/entries/${entryId}/payments/${paymentId}`, { method: "DELETE" }),
+  uploadReceipt: async (entryId: string, file: File): Promise<Entry> => {
+    const body = new FormData();
+    body.append("file", file);
+    const res = await fetch(`${BASE}/entries/${entryId}/receipt`, { method: "POST", body });
+    if (!res.ok) throw new ApiError(`Could not upload the photo (${res.status})`, res.status);
+    return res.json();
+  },
+  deleteReceipt: (entryId: string) => request<Entry>(`/entries/${entryId}/receipt`, { method: "DELETE" }),
+  receiptUrl: (entryId: string) => `${BASE}/entries/${entryId}/receipt`,
   prefillMonth: (month: string) =>
     request<{ created: number; entries: Entry[] }>("/entries/prefill", { method: "POST", body: JSON.stringify({ month }) }),
 

@@ -33,6 +33,13 @@ export class AuthService {
     return this.createUser(name, email, password);
   }
 
+  listUsers() {
+    return this.prisma.user.findMany({
+      select: { id: true, name: true, email: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
   private async createUser(name: string, email: string, password: string) {
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) throw new ConflictException("An account with this email already exists");

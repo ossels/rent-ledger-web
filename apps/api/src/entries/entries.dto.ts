@@ -76,6 +76,19 @@ export class UpdateEntryDto {
   note?: string;
 }
 
+export class CreatePaymentDto {
+  @IsInt()
+  @Min(1)
+  amount: number;
+
+  @Matches(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/, { message: "date must look like 2026-08-05" })
+  date: string;
+
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
 export class ListEntriesQuery {
   @IsOptional()
   @Matches(MONTH_PATTERN, { message: "month must look like 2026-08" })

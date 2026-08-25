@@ -1,14 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { Card, ListRow, Select, Switch, TopBar } from "@/components/ds";
+import { useEffect, useState } from "react";
+import { Badge, Card, ListRow, Select, Switch, TopBar } from "@/components/ds";
+import { LoginSheet } from "@/components/login-sheet";
 import { PersonSheet } from "@/components/person-sheet";
 import { ScreenState } from "@/components/screen-state";
+import { api, type AuthUser } from "@/lib/api";
 import { useLedger } from "@/lib/store";
 
 export function SettingsScreen() {
   const { settings, updateSettings, parties, buildings, partyName, user, logout } = useLedger();
   const [editingParty, setEditingParty] = useState<"a" | "b" | null>(null);
+  const [addingLogin, setAddingLogin] = useState(false);
+  const [logins, setLogins] = useState<AuthUser[]>([]);
+  const loadLogins = () => api.authUsers().then(setLogins).catch(() => undefined);
+  useEffect(() => {
+    if (settings) loadLogins();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings !== null]);
   if (!settings) return <ScreenState>{null}</ScreenState>;
   const partyBeingEdited = parties.find((p) => p.key === editingParty);
 
@@ -88,6 +97,21 @@ export function SettingsScreen() {
             ))}
           </Card>
 
+          <Card pad="sm">
+            <div className="k-label" style={{ padding: "var(--space-8) var(--space-4)" }}>Logins</div>
+            {logins.map((u) => (
+              <ListRow
+                key={u.id}
+                ledger
+                leadingIcon="shield-check"
+                title={u.name}
+                subtitle={u.email}
+                trailing={u.email === user?.email ? <Badge tone="brand">You</Badge> : undefined}
+              />
+            ))}
+            <ListRow leadingIcon="user-plus" title="Add a login" subtitle="Let the other owner sign in" chevron onClick={() => setAddingLogin(true)} />
+          </Card>
+
           <Card pad="lg">
             <div className="k-label" style={{ marginBottom: 6 }}>Every month</div>
             <Switch
@@ -138,6 +162,7 @@ export function SettingsScreen() {
         {partyBeingEdited ? (
           <PersonSheet key={partyBeingEdited.key} party={partyBeingEdited} open onClose={() => setEditingParty(null)} />
         ) : null}
+        {addingLogin ? <LoginSheet open onClose={() => setAddingLogin(false)} onAdded={loadLogins} /> : null}
       </div>
     </ScreenState>
   );

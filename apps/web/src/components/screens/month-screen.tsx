@@ -113,6 +113,7 @@ export function MonthScreen() {
                   {rent.map((e, i) => {
                     const b = buildings.find((x) => x.id === e.buildingId);
                     const collected = e.status === "COLLECTED";
+                    const partial = e.status === "PARTIAL";
                     return (
                       <ListRow
                         key={e.id}
@@ -124,7 +125,13 @@ export function MonthScreen() {
                         amount={e.total}
                         amountTone={collected ? "positive" : "muted"}
                         currency={currency}
-                        meta={collected ? `${e.day} ${abbr}` : undefined}
+                        meta={
+                          collected
+                            ? `${e.day} ${abbr}`
+                            : partial
+                              ? `${currency}${formatNumber(e.received, locale)} / ${currency}${formatNumber(e.total, locale)}`
+                              : undefined
+                        }
                         trailing={
                           <>
                             {collected ? null : (
@@ -133,7 +140,7 @@ export function MonthScreen() {
                                 variant="secondary"
                                 onClick={(ev) => {
                                   ev.stopPropagation();
-                                  markPaid(e.id);
+                                  markPaid(e);
                                 }}
                               >
                                 Mark paid

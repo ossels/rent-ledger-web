@@ -51,6 +51,7 @@ enum EntryKind {
 enum EntryStatus {
   COLLECTED
   AWAITED
+  PARTIAL
   PAID
 }
 
@@ -63,10 +64,14 @@ model Entry {
   month      String // "2026-08"
   day        Int
   total      Int // whole rupees
+  received   Int         @default(0) // cached sum(payments); status is derived from it for rent
   splitA     Int
   splitB     Int
   status     EntryStatus
   note       String?
+  receiptPath String? // one photo per entry, stored under RECEIPTS_DIR
+
+  payments Payment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,6 +79,22 @@ model Entry {
   @@index([month])
   @@index([buildingId, month])
   @@map("entries")
+}
+
+// One installment against a rent entry. Counts toward the entry's ledger month
+// regardless of the payment date (August rent paid 5 Sep is August's collection).
+model Payment {
+  id      String  @id @default(cuid())
+  entry   Entry   @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entryId String
+  amount  Int // whole rupees
+  date    String // "2026-09-05"
+  note    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entryId])
+  @@map("payments")
 }
 
 // Login accounts. The first account is created by the setup screen; further

@@ -58,6 +58,11 @@ export class AuthController {
     return user;
   }
 
+  @Get("users")
+  listUsers() {
+    return this.auth.listUsers();
+  }
+
   @Post("users")
   async addUser(@Body() dto: RegisterDto) {
     const { user } = await this.auth.addUser(dto.name, dto.email, dto.password);

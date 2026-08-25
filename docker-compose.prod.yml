@@ -51,6 +51,9 @@ services:
       DATABASE_URL: ${DATABASE_URL:?required}
       JWT_SECRET: ${JWT_SECRET:?required}
       CORS_ORIGIN: ${PUBLIC_APP_URL:-https://rentledger.ossels.ai}
+      RECEIPTS_DIR: /data/receipts
+    volumes:
+      - rentledger-receipts:/data/receipts
     expose:
       - "4000"
     healthcheck:
@@ -86,3 +89,4 @@ services:
 
 volumes:
   rentledger-pgdata:
+  rentledger-receipts:
